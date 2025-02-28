@@ -1,21 +1,28 @@
 import tarfile
 import gzip
+import os
 import pandas as pd
 import numpy as np
 from io import StringIO
 
+# Dynamically determine the file path
+def get_file_path(filename):
+    # Assumes your data files are stored in the same directory as this script or a 'data' subfolder
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, 'data', filename)
+
+
 #file_path needs to be updated for your computer/directory set up
 def load_data():
+    file_path = get_file_path('cell_taxonomy_resource.txt.gz')
 
-    file_path = 'C:/Users/sam10/OneDrive/Desktop/Summer_2024/cell_taxonomy_resource.txt.gz'
-    
-    #Checks if the file is gzipped and read accordingly
+    # Check if the file is gzipped and read accordingly
     if file_path.endswith('.gz'):
         with gzip.open(file_path, 'rt') as f:
             df = pd.read_csv(f, delimiter='\t')
     else:
         df = pd.read_csv(file_path, delimiter='\t')
-    
+
     return df
 
 #Converts a comma or space string of genes into a list of gene names
@@ -90,11 +97,11 @@ def load_gene_markers(file_path):
 
 #Function to predict cell type based on marker genes and dataset
 def predict_cell_type(species, tissue_type, marker_genes):
-    #Based on the pre set 2 data bases sets the species
-    if species.lower() == 'mus musculus':
-        file_path = 'feature.clean.MouseLiver1Slice1.tsv'
-    elif species.lower() == 'homo sapiens':
-        file_path = 'Xenium_FFPE_Human_Breast_Cancer_Rep1_panel.tsv'
+    # Dynamically determine file path based on species
+    if species.lower() == 'mouse':
+        file_path = get_file_path('feature.clean.MouseLiver1Slice1.tsv')
+    elif species.lower() == 'human':
+        file_path = get_file_path('Xenium_FFPE_Human_Breast_Cancer_Rep1_panel.tsv')
     else:
         raise ValueError("Species must be 'Mouse' or 'Human'.")
 
@@ -102,7 +109,7 @@ def predict_cell_type(species, tissue_type, marker_genes):
         gene_markers = load_gene_markers(file_path)
         matched_genes = set(marker_genes) & set(gene_markers)
         
-        #Call infer_top_cell_standards function with matched genes
+        # Call infer_top_cell_standards function with matched genes
         df = load_data()
         result = infer_top_cell_standards(df, tissue_type, list(matched_genes))
         
